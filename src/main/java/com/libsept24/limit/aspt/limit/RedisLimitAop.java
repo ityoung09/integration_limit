@@ -1,5 +1,6 @@
 package com.libsept24.limit.aspt.limit;
 
+import cn.hutool.core.util.ObjectUtil;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.RateLimiter;
 import com.libsept24.limit.handler.annotations.LocalLimit;
@@ -11,10 +12,7 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
-import org.redisson.api.RRateLimiter;
-import org.redisson.api.RateIntervalUnit;
-import org.redisson.api.RateType;
-import org.redisson.api.RedissonClient;
+import org.redisson.api.*;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
@@ -47,6 +45,11 @@ public class RedisLimitAop {
             RRateLimiter rateLimiter = redissonClient.getRateLimiter(key);
             // rateInterval RateIntervalUnit 中生成limit.permitsPerSecond()个
             rateLimiter.trySetRate(RateType.OVERALL, limit.permitsPerSecond(), 1, RateIntervalUnit.SECONDS);
+            // 如果配置有更新，则重新设置
+            RateLimiterConfig config = rateLimiter.getConfig();
+            if (ObjectUtil.notEqual(limit.permitsPerSecond(), config.getRate())) {
+                rateLimiter.setRate(RateType.OVERALL, limit.permitsPerSecond(), 1, RateIntervalUnit.SECONDS);
+            }
             boolean acquire = rateLimiter.tryAcquire(limit.timeout(), limit.timeunit());
             // 拿不到命令，直接返回异常提示
             if (!acquire) {

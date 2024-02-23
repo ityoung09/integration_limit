@@ -40,7 +40,7 @@ public class UserController {
         return ResultResponse.success(users);
     }
 
-    @RedisLimit(key = "queryUserInfos2", permitsPerSecond = 1, timeout = 0, msg = "当前排队人数较多，请稍后再试！")
+    @RedisLimit(key = "queryUserInfos2", permitsPerSecond = 11, timeout = 0, msg = "当前排队人数较多，请稍后再试！")
     @PostMapping("/queryUserInfos2")
     public ResultResponse<List<User>> queryUserInfos2(){
         List<User> users = userService.queryUserInfos();
